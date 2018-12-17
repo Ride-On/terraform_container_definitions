@@ -181,6 +181,28 @@ data "template_file" "_log_configuration" {
   }
 }
 
+data "template_file" "_healthcheck" {
+  count = "${var.healthcheck}"
+
+  template = <<JSON
+{
+  "Test": [$${test}],
+  "Interval": $${interval},
+  "Timeout": $${timeout},
+  "Retries": $${retries},
+  "StartPeriod": $${start_period}
+}
+JSON
+
+  vars {
+    test  = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
+    interval = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
+    timeout = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
+    retries = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
+    start_period = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
+  }
+}
+
 # Builds the final rendered dict
 # Ideally, this would cat the dict out through jq and ensure that it's a valid
 # JSON blob, but doing so may not be a reasonable (or even easy) action to 
@@ -203,16 +225,14 @@ JSON
           "${var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "" }",
           "${var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "" }",
           "${var.essential != "" ? data.template_file.essential.rendered : ""}",
+          "${length(keys(var.healthcheck)) > 0 ? "${jsonencode("HealthCheck")}: ${data.template_file._healthcheck.rendered}" : ""}",
           "${length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : ""}",
           "${length(var.port_mappings) > 0 ?  data.template_file._port_mappings.rendered : ""}",
           "${length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "" }",
           "${length(var.mount_points) > 0 ? data.template_file._mount_list.rendered : "" }",
           "${length(var.volumes_from) > 0 ? data.template_file._volumes_from_list.rendered : "" }",
           "${length(var.command) > 0 ? "${jsonencode("command")}: ${jsonencode(var.command)}" : "" }",
-          "${ length(var.logging_driver) > 0
-            ? "${jsonencode("logConfiguration")}: ${data.template_file._log_configuration.rendered}"
-            : ""
-            }",
+          "${length(var.logging_driver) > 0 ? "${jsonencode("logConfiguration")}: ${data.template_file._log_configuration.rendered}": ""}",
           )
         )
       )}"
