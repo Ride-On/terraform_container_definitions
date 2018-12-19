@@ -186,7 +186,7 @@ data "template_file" "_healthcheck" {
 
   template = <<JSON
 {
-  "Test": "[CMD-SHELL," $${test}"]",
+  "Test": $${test},
   "Interval": $${interval},
   "Timeout": $${timeout},
   "Retries": $${retries},
