@@ -182,6 +182,11 @@ data "template_file" "_log_configuration" {
 }
 
 data "template_file" "_healthcheck" {
+  # Will become an empty string
+  template = "${jsonencode("healthcheck")}: ${jsonencode(var.healthcheck)}"
+}
+
+/*data "template_file" "_healthcheck" {
   count = "${var.healthcheck}"
 
   template = <<JSON
@@ -201,7 +206,7 @@ JSON
     retries = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
     start_period = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
   }
-}
+}*/
 
 # Builds the final rendered dict
 # Ideally, this would cat the dict out through jq and ensure that it's a valid
