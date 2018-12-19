@@ -181,6 +181,11 @@ data "template_file" "_log_configuration" {
   }
 }
 
+data "template_file" "_healthcheck" {
+  # Will become an empty string
+  template = "${jsonencode("HealthCheck")}: ${jsonencode(var.healthcheck)}"
+}
+
 /*data "template_file" "_healthcheck" {
   count = "${var.healthcheck}"
 
@@ -225,7 +230,7 @@ JSON
           "${var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "" }",
           "${var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "" }",
           "${var.essential != "" ? data.template_file.essential.rendered : ""}",
-          "${length(keys(var.healthcheck)) > 0 ? "${jsonencode("HealthCheck")}: ${jsonencode(var.healthcheck)}" : ""}",
+          "${length(keys(var.healthcheck)) > 0 ? data.template_file._healthcheck.rendered : ""}",
           "${length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : ""}",
           "${length(var.port_mappings) > 0 ?  data.template_file._port_mappings.rendered : ""}",
           "${length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "" }",
