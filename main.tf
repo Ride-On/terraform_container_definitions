@@ -193,12 +193,12 @@ data "template_file" "_healthcheck" {
   JSON
 
   vars {
-    cmd         = "${lookup(var.healthcheck, "cmd", "") }"
-    curl        = "${lookup(var.healthcheck, "curl", "") }"
-    interval    = "${lookup(var.healthcheck, "interval", "") }"
-    timeout     = "${lookup(var.healthcheck, "timeout", "") }"
-    retries     = "${lookup(var.healthcheck, "retries", "") }"
-    startPeriod = "${lookup(var.healthcheck, "start_period", "") }"
+    cmd         = "${lookup(var.healthcheck, "cmd", "")}"
+    curl        = "${lookup(var.healthcheck, "curl", "")}"
+    interval    = "${lookup(var.healthcheck, "interval", "")}"
+    timeout     = "${lookup(var.healthcheck, "timeout", "")}"
+    retries     = "${lookup(var.healthcheck, "retries", "")}"
+    startPeriod = "${lookup(var.healthcheck, "start_period", 0)}"
   }
 }
 
