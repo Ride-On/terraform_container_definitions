@@ -112,3 +112,8 @@ variable "logging_options" {
 }
 
 variable "environment_count" {}
+
+variable "healthcheck" {
+  default = {}
+  type = "map"
+}
