@@ -183,33 +183,22 @@ data "template_file" "_log_configuration" {
 
 data "template_file" "_healthcheck" {
   template = <<JSON
-  {$${join(",",
-    compact(
-      "$${jsonencode("command")}: ${list($${command})}",
-      "$${jsonencode("interval")}: $${interval}",
-      "$${jsonencode("timeout")}: $${timeout}",
-      "$${jsonencode("retries")}: $${retries}",
-      "$${jsonencode("startPeriod")}: $${startPeriod}"
-    )
-  )}}
+  {
+    "command": ["$${cmd}", "$${curl}"],
+    "interval": $${interval},
+    "timeout": $${timeout},
+    "retries": $${retries},
+    "startPeriod": $${startPeriod}
+  }
   JSON
 
   vars {
-    command     = "${lookup(var.healthcheck, "command", "") }"
+    cmd         = "${lookup(var.healthcheck, "cmd", "") }"
+    curl        = "${lookup(var.healthcheck, "curl", "") }"
     interval    = "${lookup(var.healthcheck, "interval", "") }"
     timeout     = "${lookup(var.healthcheck, "timeout", "") }"
     retries     = "${lookup(var.healthcheck, "retries", "") }"
     startPeriod = "${lookup(var.healthcheck, "start_period", "") }"
-  }
-}
-
-data "template_file" "_healthchecks" {
-  template = <<JSON
-  "healthCheck": [$${checks}]
-  JSON
-
-  vars {
-    checks = "${join(",",data.template_file._healthcheck.*.rendered)}"
   }
 }
 
@@ -235,7 +224,7 @@ JSON
           "${var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "" }",
           "${var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "" }",
           "${var.essential != "" ? data.template_file.essential.rendered : ""}",
-          "${length(keys(var.healthcheck)) > 0 ? data.template_file._healthchecks.rendered : ""}",
+          "${length(keys(var.healthcheck)) > 0 ? "${jsonencode("healthCheck")}: ${data.template_file._healthcheck.rendered}" : ""}",
           "${length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : ""}",
           "${length(var.port_mappings) > 0 ?  data.template_file._port_mappings.rendered : ""}",
           "${length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "" }",
