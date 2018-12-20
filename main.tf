@@ -182,8 +182,37 @@ data "template_file" "_log_configuration" {
 }
 
 data "template_file" "_healthcheck" {
-  # Will become an empty string
-  template = "${jsonencode("healthCheck")}: ${jsonencode(var.healthcheck)}"
+  template = <<JSON
+  {$${join(",",
+    compact(
+      list(
+      command == "" ? "" : "$${jsonencode("command")}: $${command}",
+      "$${jsonencode("interval")}: $${interval}",
+      "$${jsonencode("timeout")}: $${timeout}",
+      "$${jsonencode("retries")}: $${retries}",
+      "$${jsonencode("startPeriod")}: $${startPeriod}"
+      )
+    )
+  )}}
+  JSON
+
+  vars {
+    command     = "${lookup(var.healthcheck, "command", "") }"
+    interval    = "${lookup(var.healthcheck, "interval", "") }"
+    timeout     = "${lookup(var.healthcheck, "timeout", "") }"
+    retries     = "${lookup(var.healthcheck, "retries", "") }"
+    startPeriod = "${lookup(var.healthcheck, "start_period", "") }"
+  }
+}
+
+data "template_file" "_healthchecks" {
+  template = <<JSON
+  "healthCheck": [$${checks}]
+  JSON
+
+  vars {
+    checks = "${join(",",data.template_file._healthcheck.*.rendered)}"
+  }
 }
 
 # Builds the final rendered dict
@@ -208,7 +237,7 @@ JSON
           "${var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "" }",
           "${var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "" }",
           "${var.essential != "" ? data.template_file.essential.rendered : ""}",
-          "${length(keys(var.healthcheck)) > 0 ? data.template_file._healthcheck.rendered : ""}",
+          "${length(keys(var.healthcheck)) > 0 ? data.template_file._healthchecks.rendered : ""}",
           "${length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : ""}",
           "${length(var.port_mappings) > 0 ?  data.template_file._port_mappings.rendered : ""}",
           "${length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "" }",
