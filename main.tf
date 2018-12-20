@@ -185,13 +185,11 @@ data "template_file" "_healthcheck" {
   template = <<JSON
   {$${join(",",
     compact(
-      list(
-      command == "" ? "" : "$${jsonencode("command")}: $${command}",
+      "$${jsonencode("command")}: ${list($${command})}",
       "$${jsonencode("interval")}: $${interval}",
       "$${jsonencode("timeout")}: $${timeout}",
       "$${jsonencode("retries")}: $${retries}",
       "$${jsonencode("startPeriod")}: $${startPeriod}"
-      )
     )
   )}}
   JSON
