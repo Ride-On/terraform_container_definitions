@@ -183,30 +183,8 @@ data "template_file" "_log_configuration" {
 
 data "template_file" "_healthcheck" {
   # Will become an empty string
-  template = "${jsonencode("HealthCheck")}: ${jsonencode(var.healthcheck)}"
+  template = "${jsonencode("healthCheck")}: ${jsonencode(var.healthcheck)}"
 }
-
-/*data "template_file" "_healthcheck" {
-  count = "${var.healthcheck}"
-
-  template = <<JSON
-{
-  "Test": $${test},
-  "Interval": $${interval},
-  "Timeout": $${timeout},
-  "Retries": $${retries},
-  "StartPeriod": $${start_period}
-}
-JSON
-
-  vars {
-    test  = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
-    interval = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
-    timeout = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
-    retries = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
-    start_period = "${jsonencode(lookup(var.healthcheck, element(keys(var.healthcheck), count.index)))}"
-  }
-}*/
 
 # Builds the final rendered dict
 # Ideally, this would cat the dict out through jq and ensure that it's a valid
@@ -231,6 +209,7 @@ JSON
           "${var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "" }",
           "${var.essential != "" ? data.template_file.essential.rendered : ""}",
           "${length(keys(var.healthcheck)) > 0 ? data.template_file._healthcheck.rendered : ""}",
+          "${jsonencode("idea")}: ${jsonencode("nada")}",
           "${length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : ""}",
           "${length(var.port_mappings) > 0 ?  data.template_file._port_mappings.rendered : ""}",
           "${length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "" }",
