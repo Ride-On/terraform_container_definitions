@@ -17,7 +17,7 @@ variable "memory" {
 }
 
 variable "memory_reservation" {
-  default     = ""
+  default = ""
 }
 
 variable "cpu" {
@@ -26,19 +26,19 @@ variable "cpu" {
 }
 
 variable "port_mappings" {
-  type        = "list"
+  type        = list(any)
   default     = []
   description = ""
 }
 
 variable "links" {
-  type        = "list"
+  type        = list(any)
   default     = []
   description = ""
 }
 
 variable "entry_point" {
-  type        = "list"
+  type        = list(any)
   default     = []
   description = ""
 }
@@ -54,7 +54,7 @@ variable "working_directory" {
 }
 
 variable "environment" {
-  type        = "map"
+  type        = map(any)
   default     = {}
   description = ""
 }
@@ -101,19 +101,21 @@ variable "volumes_from" {
 
 variable "logging_driver" {
   default     = ""
-  type        = "string"
+  type        = string
   description = "logging configuration"
 }
 
 variable "logging_options" {
   default     = {}
-  type        = "map"
+  type        = map(any)
   description = ""
 }
 
-variable "environment_count" {}
+variable "environment_count" {
+}
 
 variable "healthcheck" {
   default = {}
-  type = "map"
+  type    = map(any)
 }
+

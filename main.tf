@@ -2,10 +2,10 @@
 # So we need to cheaply cast it back to the literal of `false` and `true`
 
 data "template_file" "essential" {
-  template = "$${jsonencode("essential")}: $${val ? true : false}"
+  template = "$${jsonencode(\"essential\")}: $${val ? true : false}"
 
-  vars {
-    val = "${var.essential != "" ? var.essential : "false"}"
+  vars = {
+    val = var.essential != "" ? var.essential : "false"
   }
 }
 
@@ -15,7 +15,7 @@ data "template_file" "essential" {
 # validation later
 
 data "template_file" "_port_mapping" {
-  count = "${length(var.port_mappings)}"
+  count = length(var.port_mappings)
 
   template = <<JSON
 {$${join(",",
@@ -29,12 +29,12 @@ data "template_file" "_port_mapping" {
 )}}
 JSON
 
-  vars {
-    hostPort = "${ lookup(var.port_mappings[count.index], "host_port", "") }"
 
+  vars = {
+    hostPort = lookup(var.port_mappings[count.index], "host_port", "")
     # So that TF will throw an error - this is a required field
-    containerPort = "${ lookup(var.port_mappings[count.index], "container_port") }"
-    protocol      = "${ lookup(var.port_mappings[count.index], "protocol", "") }"
+    containerPort = var.port_mappings[count.index]["container_port"]
+    protocol = lookup(var.port_mappings[count.index], "protocol", "")
   }
 }
 
@@ -45,44 +45,47 @@ data "template_file" "_port_mappings" {
 "portMappings": [$${ports}]
 JSON
 
-  vars {
-    ports = "${join(",",data.template_file._port_mapping.*.rendered)}"
-  }
+
+vars = {
+ports = join(",", data.template_file._port_mapping.*.rendered)
+}
 }
 
 # Constructs the environment K/V from a map.
 # Prevents an envar from being declared more than once, as is sensible
 
 data "template_file" "_environment_keys" {
-  count = "${var.environment_count}"
+count = var.environment_count
 
-  template = <<JSON
+template = <<JSON
 {
   "name": $${name},
   "value":$${value}
 }
 JSON
 
-  vars {
-    name  = "${jsonencode( element(keys(var.environment), count.index) )}"
-    value = "${jsonencode( lookup(var.environment, element(keys(var.environment), count.index)) )}"
-  }
+
+vars = {
+name = jsonencode(element(keys(var.environment), count.index))
+value = jsonencode(var.environment[element(keys(var.environment), count.index)])
+}
 }
 
 data "template_file" "_environment_list" {
-  template = <<JSON
+template = <<JSON
   "environment": [$${environment}]
 JSON
 
-  vars {
-    environment = "${join(",",data.template_file._environment_keys.*.rendered)}"
+
+  vars = {
+    environment = join(",", data.template_file._environment_keys.*.rendered)
   }
 }
 
 # Done this way because of module boundaries casting booleans to 0 and 1
 
 data "template_file" "_mount_keys" {
-  count = "${length(var.mount_points)}"
+  count = length(var.mount_points)
 
   template = <<JSON
 {$${join(",",
@@ -96,10 +99,11 @@ data "template_file" "_mount_keys" {
 )}}
 JSON
 
-  vars {
-    sourceVolume  = "${lookup(var.mount_points[count.index], "source_volume")}"
-    containerPath = "${lookup(var.mount_points[count.index], "container_path")}"
-    read_only     = "${lookup(var.mount_points[count.index], "read_only", "")}"
+
+  vars = {
+    sourceVolume = var.mount_points[count.index]["source_volume"]
+    containerPath = var.mount_points[count.index]["container_path"]
+    read_only = lookup(var.mount_points[count.index], "read_only", "")
   }
 }
 
@@ -110,17 +114,18 @@ data "template_file" "_mount_list" {
 "mountPoints": [$${mounts}]
 JSON
 
-  vars {
-    mounts = "${join(",",data.template_file._mount_keys.*.rendered)}"
-  }
+
+vars = {
+mounts = join(",", data.template_file._mount_keys.*.rendered)
+}
 }
 
 # create the volume_from elements
 
 data "template_file" "_volumes_from_keys" {
-  count = "${length(var.volumes_from)}"
+count = length(var.volumes_from)
 
-  template = <<JSON
+template = <<JSON
 {$${join(",",
   compact(
     list(
@@ -131,33 +136,32 @@ data "template_file" "_volumes_from_keys" {
 )}}
 JSON
 
-  vars {
-    sourceContainer = "${lookup(var.volumes_from[count.index], "source_container")}"
-    read_only       = "${lookup(var.volumes_from[count.index], "read_only", "")}"
-  }
+
+vars = {
+sourceContainer = var.volumes_from[count.index]["source_container"]
+read_only = lookup(var.volumes_from[count.index], "read_only", "")
+}
 }
 
 # concatenate a list out of the rendered dicts
 
 data "template_file" "_volumes_from_list" {
-  # This should construct a normal list
-  template = <<JSON
+# This should construct a normal list
+template = <<JSON
 "volumesFrom": [$${volumes}]
 JSON
 
-  vars {
-    volumes = "${join(",",data.template_file._volumes_from_keys.*.rendered)}"
+
+  vars = {
+    volumes = join(",", data.template_file._volumes_from_keys.*.rendered)
   }
 }
 
 data "template_file" "_log_configuration_driver" {
   template = "$${driver}"
 
-  vars {
-    driver = "${ length(var.logging_driver) > 0
-      ? "${jsonencode("logDriver")}: ${ jsonencode(var.logging_driver) }"
-      : ""
-      }"
+  vars = {
+    driver = length(var.logging_driver) > 0 ? "${jsonencode("logDriver")}: ${jsonencode(var.logging_driver)}" : ""
   }
 }
 
@@ -169,15 +173,16 @@ data "template_file" "_log_configuration_options" {
 data "template_file" "_log_configuration" {
   template = "{$${configuration}}"
 
-  vars {
-    configuration = "${join(",",
-        compact(
-          list(
-            data.template_file._log_configuration_driver.rendered,
-            data.template_file._log_configuration_options.rendered
-          )
-        )
-    )}"
+  vars = {
+    configuration = join(
+      ",",
+      compact(
+        [
+          data.template_file._log_configuration_driver.rendered,
+          data.template_file._log_configuration_options.rendered,
+        ],
+      ),
+    )
   }
 }
 
@@ -190,15 +195,17 @@ data "template_file" "_healthcheck" {
     "retries": $${retries},
     "startPeriod": $${startPeriod}
   }
-  JSON
+  
+JSON
 
-  vars {
-    cmd         = "${lookup(var.healthcheck, "cmd", "")}"
-    curl        = "${lookup(var.healthcheck, "curl", "")}"
-    interval    = "${lookup(var.healthcheck, "interval", "")}"
-    timeout     = "${lookup(var.healthcheck, "timeout", "")}"
-    retries     = "${lookup(var.healthcheck, "retries", "")}"
-    startPeriod = "${lookup(var.healthcheck, "start_period", 0)}"
+
+  vars = {
+    cmd = lookup(var.healthcheck, "cmd", "")
+    curl = lookup(var.healthcheck, "curl", "")
+    interval = lookup(var.healthcheck, "interval", "")
+    timeout = lookup(var.healthcheck, "timeout", "")
+    retries = lookup(var.healthcheck, "retries", "")
+    startPeriod = lookup(var.healthcheck, "start_period", 0)
   }
 }
 
@@ -214,26 +221,29 @@ data "template_file" "_final" {
   }
 JSON
 
-  vars {
-    val = "${join(",",
-      compact(
-        list(
-          "${jsonencode("name")}: ${jsonencode(var.name)}",
-          "${jsonencode("image")}: ${jsonencode(var.image)}",
-          "${var.cpu != "" ? "${jsonencode("cpu")}: ${var.cpu}" : "" }",
-          "${var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "" }",
-          "${var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "" }",
-          "${var.essential != "" ? data.template_file.essential.rendered : ""}",
-          "${length(keys(var.healthcheck)) > 0 ? "${jsonencode("healthCheck")}: ${data.template_file._healthcheck.rendered}" : ""}",
-          "${length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : ""}",
-          "${length(var.port_mappings) > 0 ?  data.template_file._port_mappings.rendered : ""}",
-          "${length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "" }",
-          "${length(var.mount_points) > 0 ? data.template_file._mount_list.rendered : "" }",
-          "${length(var.volumes_from) > 0 ? data.template_file._volumes_from_list.rendered : "" }",
-          "${length(var.command) > 0 ? "${jsonencode("command")}: ${jsonencode(var.command)}" : "" }",
-          "${length(var.logging_driver) > 0 ? "${jsonencode("logConfiguration")}: ${data.template_file._log_configuration.rendered}": ""}",
-          )
-        )
-      )}"
-  }
+
+vars = {
+val = join(
+",",
+compact(
+[
+"${jsonencode("name")}: ${jsonencode(var.name)}",
+"${jsonencode("image")}: ${jsonencode(var.image)}",
+var.cpu != "" ? "${jsonencode("cpu")}: ${var.cpu}" : "",
+var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "",
+var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "",
+var.essential != "" ? data.template_file.essential.rendered : "",
+length(keys(var.healthcheck)) > 0 ? "${jsonencode("healthCheck")}: ${data.template_file._healthcheck.rendered}" : "",
+length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : "",
+length(var.port_mappings) > 0 ? data.template_file._port_mappings.rendered : "",
+length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "",
+length(var.mount_points) > 0 ? data.template_file._mount_list.rendered : "",
+length(var.volumes_from) > 0 ? data.template_file._volumes_from_list.rendered : "",
+length(var.command) > 0 ? "${jsonencode("command")}: ${jsonencode(var.command)}" : "",
+length(var.logging_driver) > 0 ? "${jsonencode("logConfiguration")}: ${data.template_file._log_configuration.rendered}" : "",
+],
+),
+)
 }
+}
+
