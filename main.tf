@@ -209,6 +209,38 @@ JSON
   }
 }
 
+data "template_file" "_ulimit" {
+  count = length(var.ulimits)
+
+  template = <<JSON
+{$${join(",",
+  compact(
+    list(
+    name == "" ? "" : "$${jsonencode("name")}: $${name}",
+    softLimit == "" ? "" : "$${jsonencode("softLimit")}: $${jsonencode(softLimit)}"
+    hardLimit == "" ? "" : "$${jsonencode("hardLimit")}: $${jsonencode(hardLimit)}"
+    )
+  )
+)}}
+JSON
+
+  vars = {
+    name = lookup(var.ulimits[count.index], "name", "")
+    softLimit = lookup(var.ulimits[count.index], "soft_limit", "")
+    hardLimit = lookup(var.ulimits[count.index], "hard_limit", "")
+  }
+}
+
+data "template_file" "_ulimits" {
+  template = <<JSON
+"ulimit": [$${ulimits}]
+JSON
+
+vars = {
+ulimits = join(",", data.template_file._ulimit.*.rendered)
+}
+}
+
 # Builds the final rendered dict
 # Ideally, this would cat the dict out through jq and ensure that it's a valid
 # JSON blob, but doing so may not be a reasonable (or even easy) action to 
@@ -234,6 +266,7 @@ var.memory != "" ? "${jsonencode("memory")}: ${var.memory}" : "",
 var.memory_reservation != "" ? "${jsonencode("memoryReservation")}: ${var.memory_reservation}" : "",
 var.essential != "" ? data.template_file.essential.rendered : "",
 length(keys(var.healthcheck)) > 0 ? "${jsonencode("healthCheck")}: ${data.template_file._healthcheck.rendered}" : "",
+length(var.ulimits) > 0 ? data.template_file._ulimits.rendered : "",
 length(var.links) > 0 ? "${jsonencode("links")}: ${jsonencode(var.links)}" : "",
 length(var.port_mappings) > 0 ? data.template_file._port_mappings.rendered : "",
 length(keys(var.environment)) > 0 ? data.template_file._environment_list.rendered : "",

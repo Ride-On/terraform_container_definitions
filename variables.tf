@@ -119,3 +119,8 @@ variable "healthcheck" {
   type    = map(any)
 }
 
+variable "ulimits" {
+  type        = list(any)
+  default     = []
+  description = "a list of maps"
+}
