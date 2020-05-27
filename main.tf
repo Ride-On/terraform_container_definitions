@@ -200,11 +200,11 @@ JSON
 
 
   vars = {
-    cmd = lookup(var.healthcheck, "cmd", "")
+    cmd = lookup(var.healthcheck, "cmd", "CMD")
     curl = lookup(var.healthcheck, "curl", "")
-    interval = lookup(var.healthcheck, "interval", "")
-    timeout = lookup(var.healthcheck, "timeout", "")
-    retries = lookup(var.healthcheck, "retries", "")
+    interval = lookup(var.healthcheck, "interval", 30)
+    timeout = lookup(var.healthcheck, "timeout", 5)
+    retries = lookup(var.healthcheck, "retries", 3)
     startPeriod = lookup(var.healthcheck, "start_period", 0)
   }
 }
